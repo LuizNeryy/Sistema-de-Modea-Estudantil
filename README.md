@@ -43,3 +43,8 @@ Como aluno, professor ou empresa parceira, desejo realizar login com email e sen
 
 - **10- Histórico de Resgate de Vantagens:**
 Como empresa parceira, desejo visualizar o histórico de vantagens resgatadas por alunos, para acompanhar os resgates realizados.
+
+
+## Diagrama de caso de uso: 
+![image](https://github.com/user-attachments/assets/de65963e-05dd-42d9-b276-bb4b257440f4)
+
