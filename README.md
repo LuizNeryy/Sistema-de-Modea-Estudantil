@@ -17,29 +17,29 @@ Este projeto é um sistema de reconhecimento de mérito estudantil através de u
 - **1- Cadastro de Aluno:**
 Como aluno, desejo poder realizar meu cadastro para participar do sistema de mérito.
 
--**2- Consulta de Instituições:**
+- **2- Consulta de Instituições:**
 Como aluno, desejo visualizar uma lista de instituições pré-cadastradas para selecionar a minha durante o cadastro.
 
--**3- Distribuição de Moedas do Professor:**
+- **3- Distribuição de Moedas do Professor:**
 Como professor, desejo poder distribuir moedas aos meus alunos, enviando até 1.000 moedas por semestre e adicionando uma mensagem de reconhecimento.
 
--**4- Notificação por Email ao Aluno:**
+- **4- Notificação por Email ao Aluno:**
 Como aluno, desejo receber notificações por email quando receber moedas de um professor, para que eu veja em tempo real.
 
--**5- Consulta de Extrato de Moedas do professor:**
+- **5- Consulta de Extrato de Moedas do professor:**
 Como professor, desejo consultar meu saldo de moedas e ver o histórico de envios aos alunos, para acompanhar as transações realizadas.
 
--**6- Resgate de Vantagens:**
+- **6- Resgate de Vantagens:**
 Como aluno, desejo poder trocar minhas moedas por vantagens cadastradas, para aproveitar os benefícios.
 
--**7- Cadastro de Vantagens:**
+- **7- Cadastro de Vantagens:**
 Como empresa parceira, desejo cadastrar vantagens no sistema, com descrição, foto e custo em moedas, para que alunos possam resgatá-las.
 
--**8- Alterar Dados de Cadastro:**
+- **8- Alterar Dados de Cadastro:**
 Como aluno, desejo poder alterar meus dados pessoais, como endereço e curso, para manter minhas informações sempre atualizadas.
 
--**9- Autenticação no Sistema:**
+- **9- Autenticação no Sistema:**
 Como aluno, professor ou empresa parceira, desejo realizar login com email e senha, para garantir a segurança do acesso ao sistema e minhas transações.
 
--**10- Histórico de Resgate de Vantagens:**
+- **10- Histórico de Resgate de Vantagens:**
 Como empresa parceira, desejo visualizar o histórico de vantagens resgatadas por alunos, para acompanhar os resgates realizados.
