@@ -48,3 +48,7 @@ Como empresa parceira, desejo visualizar o histórico de vantagens resgatadas po
 ## Diagrama de caso de uso: 
 ![image](https://github.com/user-attachments/assets/de65963e-05dd-42d9-b276-bb4b257440f4)
 
+## Diagrama de classes:
+![image](https://github.com/user-attachments/assets/9fe56d67-8a7d-463f-9582-c5d4c807969e)
+
+
