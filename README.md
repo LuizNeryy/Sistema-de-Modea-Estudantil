@@ -51,4 +51,8 @@ Como empresa parceira, desejo visualizar o histórico de vantagens resgatadas po
 ## Diagrama de classes:
 ![image](https://github.com/user-attachments/assets/9fe56d67-8a7d-463f-9582-c5d4c807969e)
 
+## Diagrama de componentes:
+![image](https://github.com/user-attachments/assets/1c983dc1-f2d8-46e8-986c-cca5a59a6bd3)
+
+
 
