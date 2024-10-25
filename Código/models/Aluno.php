@@ -10,7 +10,11 @@ include '../config/conexao.php';
 
 $usuario_id = $_SESSION['usuario_id'];
 
-$query = "SELECT nome, email, cpf, instituicao, curso, moedas FROM alunos WHERE id = ?";
+// Consultar informações do aluno
+$query = "SELECT a.nome, a.cpf, a.email, a.curso, a.moedas, i.nome AS instituicao 
+          FROM alunos a 
+          JOIN instituicoes i ON a.instituicao_id = i.id 
+          WHERE a.id = ?";
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $usuario_id);
 $stmt->execute();
@@ -44,7 +48,7 @@ if ($result->num_rows > 0) {
             background: white;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            text-align: left; /* Alinhando todo o texto à esquerda */
+            text-align: left;
         }
 
         h2 {
@@ -88,7 +92,7 @@ if ($result->num_rows > 0) {
             font-size: 16px;
             cursor: pointer;
             transition: background-color 0.3s;
-            margin: 0.5em 0; /* Adicionado espaço entre os botões */
+            margin: 0.5em 0;
         }
 
         .btn:hover {
@@ -96,8 +100,8 @@ if ($result->num_rows > 0) {
         }
 
         .logout-btn {
-            background-color: red; /* Botão de logout vermelho */
-            margin-top: 2em; /* Mais espaço acima do botão de logout */
+            background-color: red; 
+            margin-top: 2em; 
         }
 
     </style>
@@ -107,14 +111,14 @@ if ($result->num_rows > 0) {
         <h2>Perfil do Aluno</h2>
         <div class="info">
             <p><strong>Nome:</strong> <?= htmlspecialchars($aluno['nome']) ?></p>
-            <p><strong>Email:</strong> <?= htmlspecialchars($aluno['email']) ?></p>
             <p><strong>CPF:</strong> <?= htmlspecialchars($aluno['cpf']) ?></p>
-            <p><strong>Instituição:</strong> <?= htmlspecialchars($aluno['instituicao']) ?></p>
+            <p><strong>E-mail:</strong> <?= htmlspecialchars($aluno['email']) ?></p>
             <p><strong>Curso:</strong> <?= htmlspecialchars($aluno['curso']) ?></p>
+            <p><strong>Instituição:</strong> <?= htmlspecialchars($aluno['instituicao']) ?></p>
         </div>
 
         <div class="card">
-            <h3>Moedas Disponíveis</h3>
+            <h3>Moedas</h3>
             <div class="moedas">
                 <i class="fas fa-coins"></i>
                 <?= htmlspecialchars($aluno['moedas']) ?> Moedas

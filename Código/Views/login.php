@@ -1,29 +1,80 @@
 <?php
-session_start();
+session_start(); // Inicia a sessão
 
-if (!isset($_SESSION['usuario_id'])) {
-    header("Location: /Views/login.php"); 
-    exit();
-}
+// Processa o formulário de login
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // Inclua a conexão ao banco de dados
+    include '../config/conexao.php'; // Ajuste o caminho conforme sua estrutura
 
-include '../config/conexao.php'; 
+    // Verifica se os campos foram preenchidos
+    if (isset($_POST['login']) && isset($_POST['senha'])) {
+        $login = $_POST['login']; // Aqui pode ser CPF (aluno/professor) ou CNPJ (empresa)
+        $senha = $_POST['senha'];
 
-$usuario_id = $_SESSION['usuario_id'];
+        // Tenta autenticar como aluno
+        $queryAluno = "SELECT id, senha FROM alunos WHERE cpf = ?";
+        $stmtAluno = $conn->prepare($queryAluno);
+        $stmtAluno->bind_param("s", $login);
+        $stmtAluno->execute();
+        $resultAluno = $stmtAluno->get_result();
 
-// Consultar informações do aluno
-$query = "SELECT a.nome, a.cpf, a.email, a.curso, a.moedas, i.nome AS instituicao 
-          FROM alunos a 
-          JOIN instituicoes i ON a.instituicao_id = i.id 
-          WHERE a.id = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $usuario_id);
-$stmt->execute();
-$result = $stmt->get_result();
+        if ($resultAluno->num_rows > 0) {
+            $user = $resultAluno->fetch_assoc();
+            if (password_verify($senha, $user['senha'])) {
+                // Autentica o aluno
+                $_SESSION['usuario_id'] = $user['id'];
+                $_SESSION['tipo_usuario'] = 'aluno'; // Define o tipo de usuário como aluno
+                header("Location: ../models/aluno.php"); // Redireciona para a página do aluno
+                exit();
+            } else {
+                $erro = "Senha incorreta.";
+            }
+        } else {
+            // Se não encontrou um aluno, tenta buscar um professor
+            $queryProfessor = "SELECT id, senha FROM professores WHERE cpf = ?";
+            $stmtProfessor = $conn->prepare($queryProfessor);
+            $stmtProfessor->bind_param("s", $login);
+            $stmtProfessor->execute();
+            $resultProfessor = $stmtProfessor->get_result();
 
-if ($result->num_rows > 0) {
-    $aluno = $result->fetch_assoc();
-} else {
-    die("Aluno não encontrado.");
+            if ($resultProfessor->num_rows > 0) {
+                $user = $resultProfessor->fetch_assoc();
+                if (password_verify($senha, $user['senha'])) {
+                    // Autentica o professor
+                    $_SESSION['usuario_id'] = $user['id'];
+                    $_SESSION['tipo_usuario'] = 'professor'; // Define o tipo de usuário como professor
+                    header("Location: ../models/professor.php"); // Redireciona para a página do professor
+                    exit();
+                } else {
+                    $erro = "Senha incorreta.";
+                }
+            } else {
+                // Se não encontrou um professor, tenta autenticar como empresa
+                $queryEmpresa = "SELECT id, senha FROM empresas WHERE cnpj = ?";
+                $stmtEmpresa = $conn->prepare($queryEmpresa);
+                $stmtEmpresa->bind_param("s", $login);
+                $stmtEmpresa->execute();
+                $resultEmpresa = $stmtEmpresa->get_result();
+
+                if ($resultEmpresa->num_rows > 0) {
+                    $user = $resultEmpresa->fetch_assoc();
+                    if (password_verify($senha, $user['senha'])) {
+                        // Autentica a empresa
+                        $_SESSION['usuario_id'] = $user['id'];
+                        $_SESSION['tipo_usuario'] = 'empresa'; // Define o tipo de usuário como empresa
+                        header("Location: empresa/empresa.php"); // Redireciona para a página da empresa
+                        exit();
+                    } else {
+                        $erro = "Senha incorreta.";
+                    }
+                } else {
+                    $erro = "Usuário ou empresa não encontrado.";
+                }
+            }
+        }
+    } else {
+        $erro = "Por favor, preencha todos os campos.";
+    }
 }
 ?>
 
@@ -32,102 +83,93 @@ if ($result->num_rows > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil do Aluno</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <title>Login - Sistema de Moeda Estudantil</title>
+    <link rel="stylesheet" href="../css/style.css"> <!-- Inclua seu CSS -->
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             margin: 0;
         }
-
         .container {
-            max-width: 600px;
-            margin: 2em auto;
-            padding: 2em;
             background: white;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            text-align: left;
-        }
-
-        h2 {
-            margin-bottom: 0.5em;
-            color: #333;
-        }
-
-        .info {
-            margin: 1em 0;
-        }
-
-        .info strong {
-            color: blue;
-        }
-
-        .card {
-            border: 1px solid #007bff;
-            border-radius: 8px;
-            padding: 1em;
-            margin: 1em 0;
-            text-align: center;
-            background: #f9f9f9;
-        }
-
-        .moedas {
-            font-size: 1.5em;
-            margin: 1em 0;
-            color: black; 
-        }
-
-        .moedas i {
-            color: gold; 
-        }
-
-        .btn {
-            padding: 0.7em 1em;
-            border: none;
+            padding: 2em;
             border-radius: 5px;
-            background-color: blue; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 1em;
+        }
+        .input-group {
+            margin-bottom: 1em;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 0.5em;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        .btn {
+            width: 100%;
+            padding: 0.7em;
+            border: none;
+            border-radius: 3px;
+            background-color: #000;
             color: white;
             font-size: 16px;
             cursor: pointer;
-            transition: background-color 0.3s;
-            margin: 0.5em 0;
         }
-
         .btn:hover {
-            background-color: blueviolet; 
+            background-color: #333;
         }
-
-        .logout-btn {
-            background-color: red; 
-            margin-top: 2em; 
+        .error {
+            color: red;
+            text-align: center;
+            margin-top: 1em;
         }
-
+        .link {
+            text-align: center;
+            margin-top: 1em;
+        }
+        .link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Perfil do Aluno</h2>
-        <div class="info">
-            <p><strong>Nome:</strong> <?= htmlspecialchars($aluno['nome']) ?></p>
-            <p><strong>CPF:</strong> <?= htmlspecialchars($aluno['cpf']) ?></p>
-            <p><strong>E-mail:</strong> <?= htmlspecialchars($aluno['email']) ?></p>
-            <p><strong>Curso:</strong> <?= htmlspecialchars($aluno['curso']) ?></p>
-            <p><strong>Instituição:</strong> <?= htmlspecialchars($aluno['instituicao']) ?></p>
-        </div>
-
-        <div class="card">
-            <h3>Moedas</h3>
-            <div class="moedas">
-                <i class="fas fa-coins"></i>
-                <?= htmlspecialchars($aluno['moedas']) ?> Moedas
+        <h2>Login</h2>
+        <?php if (isset($erro)) { ?>
+            <div class="error"><?= $erro; ?></div>
+        <?php } ?>
+        <form action="" method="POST">
+            <div class="input-group">
+                <label for="login">CPF ou CNPJ:</label> <!-- Agora aceita CPF e CNPJ -->
+                <input type="text" id="login" name="login" required>
             </div>
-        </div>
-
-        <form action="../Views/login.php" method="POST">
-            <button type="submit" class="btn logout-btn">Sair</button>
+            <div class="input-group">
+                <label for="senha">Senha:</label>
+                <input type="password" id="senha" name="senha" required>
+            </div>
+            <button type="submit" class="btn">Entrar</button>
         </form>
+        <div class="link">
+            <p>Não possui conta? <a href="aluno/cadastro_aluno.php">Cadastre-se aqui!</a></p>
+        </div>
     </div>
 </body>
 </html>
