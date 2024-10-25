@@ -11,3 +11,48 @@ Este projeto é um sistema de reconhecimento de mérito estudantil através de u
 - **Troca de Moedas por Vantagens**: Alunos podem trocar moedas por vantagens cadastradas por empresas parceiras.
 - **Cadastro de Empresas Parceiras**: Empresas podem se cadastrar e adicionar vantagens no sistema.
 - **Autenticação**: Alunos, professores e empresas precisam de login e senha para acessar o sistema.
+
+- ## Hitórias de Usuario:
+
+- **1- Cadastro de Aluno:**
+Como aluno, desejo poder realizar meu cadastro para participar do sistema de mérito.
+
+- **2- Consulta de Instituições:**
+Como aluno, desejo visualizar uma lista de instituições pré-cadastradas para selecionar a minha durante o cadastro.
+
+- **3- Distribuição de Moedas do Professor:**
+Como professor, desejo poder distribuir moedas aos meus alunos, enviando até 1.000 moedas por semestre e adicionando uma mensagem de reconhecimento.
+
+- **4- Notificação por Email ao Aluno:**
+Como aluno, desejo receber notificações por email quando receber moedas de um professor, para que eu veja em tempo real.
+
+- **5- Consulta de Extrato de Moedas do professor:**
+Como professor, desejo consultar meu saldo de moedas e ver o histórico de envios aos alunos, para acompanhar as transações realizadas.
+
+- **6- Resgate de Vantagens:**
+Como aluno, desejo poder trocar minhas moedas por vantagens cadastradas, para aproveitar os benefícios.
+
+- **7- Cadastro de Vantagens:**
+Como empresa parceira, desejo cadastrar vantagens no sistema, com descrição, foto e custo em moedas, para que alunos possam resgatá-las.
+
+- **8- Alterar Dados de Cadastro:**
+Como aluno, desejo poder alterar meus dados pessoais, como endereço e curso, para manter minhas informações sempre atualizadas.
+
+- **9- Autenticação no Sistema:**
+Como aluno, professor ou empresa parceira, desejo realizar login com email e senha, para garantir a segurança do acesso ao sistema e minhas transações.
+
+- **10- Histórico de Resgate de Vantagens:**
+Como empresa parceira, desejo visualizar o histórico de vantagens resgatadas por alunos, para acompanhar os resgates realizados.
+
+
+## Diagrama de caso de uso: 
+![image](https://github.com/user-attachments/assets/de65963e-05dd-42d9-b276-bb4b257440f4)
+
+## Diagrama de classes:
+![image](https://github.com/user-attachments/assets/9fe56d67-8a7d-463f-9582-c5d4c807969e)
+
+## Diagrama de componentes:
+![image](https://github.com/user-attachments/assets/1c983dc1-f2d8-46e8-986c-cca5a59a6bd3)
+
+
+
