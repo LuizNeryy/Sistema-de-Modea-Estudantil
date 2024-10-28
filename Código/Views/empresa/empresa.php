@@ -17,7 +17,8 @@ $empresa = isset($_SESSION['usuario_nome']) ? $_SESSION['usuario_nome'] : 'Empre
 $mensagemSucesso = '';
 $mensagemErro = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Lógica para cadastrar recompensa
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'cadastrar') {
     $nome = $_POST['nome'];
     $descricao = $_POST['descricao'];
     $preco = $_POST['preco'];
@@ -25,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Inserindo a nova recompensa no banco de dados
     $queryInsert = "INSERT INTO recompensas (nome, descricao, preco, empresa) VALUES (?, ?, ?, ?)";
     $stmtInsert = $conn->prepare($queryInsert);
-    $stmtInsert->bind_param("ssds", $nome, $descricao, $preco, $empresa); // 'empresa' recebe o nome da empresa
+    $stmtInsert->bind_param("ssds", $nome, $descricao, $preco, $empresa);
     
     try {
         if ($stmtInsert->execute()) {
@@ -38,10 +39,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Lógica para excluir recompensa
+if (isset($_GET['acao']) && $_GET['acao'] === 'excluir' && isset($_GET['id'])) {
+    $id = $_GET['id'];
+    
+    $queryDelete = "DELETE FROM recompensas WHERE id = ? AND empresa = ?";
+    $stmtDelete = $conn->prepare($queryDelete);
+    $stmtDelete->bind_param("is", $id, $empresa);
+    
+    if ($stmtDelete->execute()) {
+        $mensagemSucesso = "Recompensa excluída com sucesso!";
+    } else {
+        $mensagemErro = "Erro ao excluir recompensa.";
+    }
+}
+
 // Busca as recompensas cadastradas pela empresa
 $queryRecompensas = "SELECT * FROM recompensas WHERE empresa = ?";
 $stmtRecompensas = $conn->prepare($queryRecompensas);
-$stmtRecompensas->bind_param("s", $empresa); // Altera para buscar pelo campo empresa
+$stmtRecompensas->bind_param("s", $empresa);
 $stmtRecompensas->execute();
 $resultRecompensas = $stmtRecompensas->get_result();
 ?>
@@ -54,7 +70,7 @@ $resultRecompensas = $stmtRecompensas->get_result();
     <title>Painel da Empresa</title>
     <link rel="stylesheet" href="../css/style.css"> <!-- Inclua seu CSS -->
     <style>
-        body {
+               body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             display: flex;
@@ -128,7 +144,6 @@ $resultRecompensas = $stmtRecompensas->get_result();
     <div class="container">
         <h2>Painel da Empresa</h2>
 
-        <!-- Exibe o nome da empresa logada -->
         <h3>Empresa parceira: <?php echo htmlspecialchars($empresa); ?></h3>
 
         <!-- Exibe mensagem de sucesso se existir -->
@@ -155,6 +170,7 @@ $resultRecompensas = $stmtRecompensas->get_result();
                 <label for="preco">Preço (em moedas):</label>
                 <input type="number" id="preco" name="preco" required min="1">
             </div>
+            <input type="hidden" name="acao" value="cadastrar">
             <button type="submit" class="btn">Cadastrar Recompensa</button>
         </form>
 
@@ -167,6 +183,10 @@ $resultRecompensas = $stmtRecompensas->get_result();
                         <h5><?= htmlspecialchars($recompensa['nome']); ?></h5>
                         <p><?= htmlspecialchars($recompensa['descricao']); ?></p>
                         <p><strong>Preço: <?= htmlspecialchars($recompensa['preco']); ?> moedas</strong></p>
+                        <div>
+                            <a href="editar_recompensa.php?id=<?= $recompensa['id']; ?>" class="btn" style="background-color: green;">Editar</a>
+                            <a href="?acao=excluir&id=<?= $recompensa['id']; ?>" class="btn" style="background-color: red;">Excluir</a>
+                        </div>
                     </div>
                 <?php endwhile; ?>
             <?php else: ?>
