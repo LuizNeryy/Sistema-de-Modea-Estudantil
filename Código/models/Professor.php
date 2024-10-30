@@ -31,76 +31,82 @@ if ($result->num_rows > 0) {
     <title>Perfil do Professor</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #f4f4f4; 
+            margin: 0; 
         }
 
-        .container {
-            max-width: 600px;
-            margin: 2em auto;
-            padding: 2em;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            text-align: left; /* Alinhando todo o texto à esquerda */
+        .container { 
+            max-width: 600px; 
+            margin: 2em auto; 
+            padding: 2em; 
+            background: white; 
+            border-radius: 8px; 
+            box-shadow: 0 0 15px rgba(0,0,0,0.1); 
+            text-align: left; 
         }
 
-        h2 {
-            margin-bottom: 0.5em;
-            color: #333;
+        h2 { 
+            margin-bottom: 0.5em; 
+            color: #333; 
         }
 
-        .info {
-            margin: 1em 0;
+        .info { 
+            margin: 1em 0; 
         }
 
-        .info strong {
-            color: blue;
+        .info p strong, h3 { 
+            color: #333; 
         }
 
-        .card {
-            border: 1px solid #007bff;
-            border-radius: 8px;
-            padding: 1em;
-            margin: 1em 0;
-            text-align: center;
-            background: #f9f9f9;
+        .card { 
+            border: none; 
+            border-radius: 8px; 
+            margin: 1em 0; 
+            text-align: center; 
         }
 
-        .moedas {
-            font-size: 1.5em;
-            margin: 1em 0;
+        .moedas { 
+            font-size: 1.5em; 
             color: black; 
         }
 
-        .moedas i {
+        .moedas i { 
             color: gold; 
         }
 
-        .btn {
-            padding: 0.7em 1em;
-            border: none;
-            border-radius: 5px;
-            background-color: blue; 
-            color: white;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin: 0.5em 0; /* Adicionado espaço entre os botões */
+        .btn { 
+            padding: 0.7em 1em; 
+            border: none; 
+            border-radius: 5px; 
+            color: white; 
+            font-size: 16px; 
+            cursor: pointer; 
+            background-color: orange;
+            transition: background-color 0.3s; 
+            margin: 0.5em 0; 
         }
 
-        .btn:hover {
-            background-color: blueviolet; 
+        .logout-btn { 
+            background-color: red; 
+            margin-top: 2em; 
         }
 
-        .logout-btn {
-            background-color: red; /* Botão de logout vermelho */
-            margin-top: 2em; /* Mais espaço acima do botão de logout */
-            /* margin-bottom: 2em; Removido para evitar conflito com o espaço inferior */
+        /* Estilos para seções */
+        .section {
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 1.5em; 
+            margin: 2em 0; 
+            background-color: #fefefe; 
         }
 
+        .section h3 { 
+            margin: 0; 
+            color: #333; 
+            text-align: center; 
+        }
     </style>
 </head>
 <body>
@@ -110,19 +116,18 @@ if ($result->num_rows > 0) {
             <p><strong>Nome:</strong> <?= htmlspecialchars($professor['nome']) ?></p>
             <p><strong>CPF:</strong> <?= htmlspecialchars($professor['cpf']) ?></p>
             <p><strong>Departamento:</strong> <?= htmlspecialchars($professor['departamento']) ?></p>
-            <p><strong>Instituição:</strong> <?= htmlspecialchars($professor['instituicao']) ?></p> <!-- Adicionando a instituição -->
+            <p><strong>Instituição:</strong> <?= htmlspecialchars($professor['instituicao']) ?></p>
         </div>
 
         <div class="card">
-            <h3>Distribuir Moedas</h3>
             <div class="moedas">
                 <i class="fas fa-coins"></i>
                 <?= htmlspecialchars($professor['moedas']) ?> Moedas
             </div>
-            <form action="distribuir_moedas.php" method="POST">
-                <input type="hidden" name="professor_id" value="<?= htmlspecialchars($usuario_id) ?>">
+            <form action="../views/professor/distribuir_moedas.php" method="GET">
                 <button type="submit" class="btn">Distribuir Moedas</button>
             </form>
+
         </div>
 
         <form action="../Views/login.php" method="POST">

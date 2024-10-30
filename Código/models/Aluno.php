@@ -40,6 +40,40 @@ $stmtResgatadas = $conn->prepare($queryResgatadas);
 $stmtResgatadas->bind_param("i", $usuario_id);
 $stmtResgatadas->execute();
 $resultResgatadas = $stmtResgatadas->get_result();
+
+// Lógica para resgatar a recompensa
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['recompensa_id'])) {
+    $recompensa_id = $_POST['recompensa_id'];
+    
+    // Verificar se o aluno tem moedas suficientes
+    $queryVerificaMoedas = "SELECT moedas FROM alunos WHERE id = ?";
+    $stmtVerificaMoedas = $conn->prepare($queryVerificaMoedas);
+    $stmtVerificaMoedas->bind_param("i", $usuario_id);
+    $stmtVerificaMoedas->execute();
+    $resultVerificaMoedas = $stmtVerificaMoedas->get_result();
+    $alunoData = $resultVerificaMoedas->fetch_assoc();
+
+    if ($alunoData['moedas'] >= $recompensa['preco']) {
+        // Registrar o resgate da recompensa
+        $queryResgate = "INSERT INTO recompensas_resgatadas (aluno_id, recompensa_id, data_resgate) VALUES (?, ?, NOW())";
+        $stmtResgate = $conn->prepare($queryResgate);
+        $stmtResgate->bind_param("ii", $usuario_id, $recompensa_id);
+        $stmtResgate->execute();
+
+        // Atualizar as moedas do aluno
+        $novaQuantidade = $alunoData['moedas'] - $recompensa['preco'];
+        $queryAtualizaMoedas = "UPDATE alunos SET moedas = ? WHERE id = ?";
+        $stmtAtualizaMoedas = $conn->prepare($queryAtualizaMoedas);
+        $stmtAtualizaMoedas->bind_param("ii", $novaQuantidade, $usuario_id);
+        $stmtAtualizaMoedas->execute();
+
+        // Redirecionar para evitar o reenvio do formulário
+        header("Location: " . $_SERVER['PHP_SELF']);
+        exit();
+    } else {
+        echo "<script>alert('Você não tem moedas suficientes para resgatar essa recompensa.');</script>";
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -58,12 +92,66 @@ $resultResgatadas = $stmtResgatadas->get_result();
         .moedas i { color: gold; }
         .btn { padding: 0.7em 1em; border: none; border-radius: 5px; color: white; font-size: 16px; cursor: pointer; transition: background-color 0.3s; margin: 0.5em 0; }
         .logout-btn { background-color: red; }
-        .card { border: 1px solid #007bff; border-radius: 8px; padding: 1em; margin: 1em 0; text-align: center; background: #f9f9f9; }
-        .recompensa-card { border: 1px solid #007bff; border-radius: 8px; padding: 1em; margin: 1em 0; text-align: left; background: #f1f1f1; }
-        .recompensa-card h5 { margin-top: 0; }
-        .recompensa-card p { margin: 0.5em 0; }
-        .btn-resgatar { background-color: green; }
-        .btn-resgatar:hover { background-color: darkgreen; }
+        .card { border: none; border-radius: 8px; margin: 1em 0; text-align: center; }
+        
+        /* Estilos para recompensas */
+        .recompensa-card, .resgatada-card { 
+            border: 1px solid #333; 
+            border-radius: 8px; 
+            padding: 1em; 
+            margin: 1em 0; 
+            text-align: left; 
+            background: #f9f9f9; 
+            transition: transform 0.3s, box-shadow 0.3s; 
+        }
+        .recompensa-card:hover, .resgatada-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); 
+        }
+        .recompensa-card h5, .resgatada-card h5 { 
+            margin-top: 0; 
+            color: #333; 
+            font-size: 1.2em; 
+        }
+        .recompensa-card p, .resgatada-card p { 
+            margin: 0.5em 0; 
+            color: #666; 
+        }
+        .btn-resgatar { 
+            background-color: #333; 
+            color: white; 
+        }
+        .btn-resgatar:hover { 
+            background-color: #555; 
+        }
+        .resgatadas-container { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 1em; 
+        }
+        .resgatada-card { 
+            flex: 1 1 calc(50% - 1em); 
+            box-shadow: 0 0 5px rgba(0,0,0,0.2); 
+            transition: transform 0.3s; 
+        }
+        .resgatada-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15); 
+        }
+
+        /* Estilos para seções */
+        .section {
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 1.5em; 
+            margin: 2em 0; 
+            background-color: #fefefe; 
+        }
+        .section h3 { 
+            margin: 0; 
+            color: #333; 
+            text-align: center; 
+        }
     </style>
     <script>
         function confirmarResgate(recompensaId, recompensaNome) {
@@ -92,29 +180,38 @@ $resultResgatadas = $stmtResgatadas->get_result();
             </div>
         </div>
 
-        <h3>Recompensas Disponíveis</h3>
-        <?php while ($recompensa = $resultRecompensas->fetch_assoc()): ?>
-            <div class="recompensa-card">
-                <h5><?= htmlspecialchars($recompensa['nome']) ?></h5>
-                <p><?= htmlspecialchars($recompensa['descricao']) ?></p>
-                <p><strong>Preço:</strong> <?= htmlspecialchars($recompensa['preco']) ?> moedas</p>
-                <form id="resgatar-form-<?= $recompensa['id'] ?>" method="POST" action="resgatar_recompensa.php" style="display: none;">
-                    <input type="hidden" name="recompensa_id" value="<?= $recompensa['id'] ?>">
-                </form>
-                <button class="btn btn-resgatar" onclick="confirmarResgate(<?= $recompensa['id'] ?>, '<?= htmlspecialchars($recompensa['nome']) ?>')">Resgatar</button>
-            </div>
-        <?php endwhile; ?>
+        <div class="section">
+            <h3>Recompensas Disponíveis</h3>
+            <?php while ($recompensa = $resultRecompensas->fetch_assoc()): ?>
+                <div class="recompensa-card">
+                    <h5><?= htmlspecialchars($recompensa['nome']) ?></h5>
+                    <p><?= htmlspecialchars($recompensa['descricao']) ?></p>
+                    <p><strong>Preço:</strong> <?= htmlspecialchars($recompensa['preco']) ?> moedas</p>
+                    <form action="" method="POST" id="resgatar-form-<?= htmlspecialchars($recompensa['id']) ?>">
+                        <input type="hidden" name="recompensa_id" value="<?= htmlspecialchars($recompensa['id']) ?>">
+                        <button type="button" class="btn btn-resgatar" onclick="confirmarResgate(<?= htmlspecialchars($recompensa['id']) ?>, '<?= htmlspecialchars($recompensa['nome']) ?>')">Resgatar</button>
+                    </form>
+                </div>
+            <?php endwhile; ?>
+        </div>
 
-        <h3>Recompensas Resgatadas</h3>
-        <?php if ($resultResgatadas->num_rows > 0): ?>
-            <ul>
-                <?php while ($resgatada = $resultResgatadas->fetch_assoc()): ?>
-                    <li><?= htmlspecialchars($resgatada['nome']) ?> - Resgatada em <?= htmlspecialchars($resgatada['data_resgate']) ?></li>
-                <?php endwhile; ?>
-            </ul>
-        <?php else: ?>
-            <p>Nenhuma recompensa resgatada.</p>
-        <?php endif; ?>
+        <div class="section">
+            <h3>Recompensas Resgatadas</h3>
+            <div class="resgatadas-container">
+                <?php if ($resultResgatadas->num_rows > 0): ?>
+                    <?php while ($resgatada = $resultResgatadas->fetch_assoc()): ?>
+                        <div class="resgatada-card">
+                            <h5><?= htmlspecialchars($resgatada['nome']) ?></h5>
+                            <p><strong>Descrição:</strong> <?= htmlspecialchars($resgatada['descricao']) ?></p>
+                            <p><strong>Preço:</strong> <?= htmlspecialchars($resgatada['preco']) ?> moedas</p>
+                            <p><strong>Resgatada em:</strong> <?= htmlspecialchars($resgatada['data_resgate']) ?></p>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <p>Ainda não há recompensas resgatadas.</p>
+                <?php endif; ?>
+            </div>
+        </div>
 
         <form action="../Views/login.php" method="POST">
             <button type="submit" class="btn logout-btn">Sair</button>

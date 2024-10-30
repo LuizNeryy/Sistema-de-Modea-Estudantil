@@ -1,41 +1,68 @@
 <?php
-session_start(); // Inicia a sessão
+session_start();
 
 // Inclua a conexão ao banco de dados
-include '../../config/conexao.php'; // Ajuste o caminho conforme sua estrutura
+include '../config/conexao.php';
 
 // Verifica se o usuário está autenticado
 if (!isset($_SESSION['usuario_id']) || $_SESSION['tipo_usuario'] != 'empresa') {
-    header("Location: ../index.php"); // Redireciona para a página de login se não estiver autenticado
+    header("Location: ../index.php");
     exit();
 }
 
-// Armazena o nome da empresa logada
-$empresa = isset($_SESSION['usuario_nome']) ? $_SESSION['usuario_nome'] : 'Empresa Desconhecida'; // Verificação
+// Consulta para buscar o nome da empresa na tabela `empresas`
+$empresa_id = $_SESSION['usuario_id'];
+$queryEmpresa = "SELECT nome FROM empresas WHERE id = ?";
+$stmtEmpresa = $conn->prepare($queryEmpresa);
+$stmtEmpresa->bind_param("i", $empresa_id);
+$stmtEmpresa->execute();
+$resultEmpresa = $stmtEmpresa->get_result();
+$empresa = $resultEmpresa->fetch_assoc()['nome'] ?? 'Empresa Desconhecida';
 
 // Mensagem de sucesso ou erro
 $mensagemSucesso = '';
 $mensagemErro = '';
 
 // Lógica para cadastrar recompensa
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'cadastrar') {
-    $nome = $_POST['nome'];
-    $descricao = $_POST['descricao'];
-    $preco = $_POST['preco'];
-    
-    // Inserindo a nova recompensa no banco de dados
-    $queryInsert = "INSERT INTO recompensas (nome, descricao, preco, empresa) VALUES (?, ?, ?, ?)";
-    $stmtInsert = $conn->prepare($queryInsert);
-    $stmtInsert->bind_param("ssds", $nome, $descricao, $preco, $empresa);
-    
-    try {
-        if ($stmtInsert->execute()) {
-            $mensagemSucesso = "Recompensa cadastrada com sucesso!";
-        } else {
-            $mensagemErro = "Erro ao cadastrar recompensa.";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao'])) {
+    if ($_POST['acao'] === 'cadastrar') {
+        // Cadastro de nova recompensa
+        $nome = $_POST['nome'];
+        $descricao = $_POST['descricao'];
+        $preco = $_POST['preco'];
+
+        // Inserindo a nova recompensa no banco de dados
+        $queryInsert = "INSERT INTO recompensas (nome, descricao, preco, empresa) VALUES (?, ?, ?, ?)";
+        $stmtInsert = $conn->prepare($queryInsert);
+        $stmtInsert->bind_param("ssds", $nome, $descricao, $preco, $empresa);
+        
+        try {
+            if ($stmtInsert->execute()) {
+                $mensagemSucesso = "Recompensa cadastrada com sucesso!";
+            } else {
+                $mensagemErro = "Erro ao cadastrar recompensa.";
+            }
+        } catch (mysqli_sql_exception $e) {
+            $mensagemErro = "Erro: " . $e->getMessage();
         }
-    } catch (mysqli_sql_exception $e) {
-        $mensagemErro = "Erro: " . $e->getMessage();
+    } elseif ($_POST['acao'] === 'editar' && isset($_POST['id'])) {
+        // Edição de recompensa
+        $id = $_POST['id'];
+        $nome = $_POST['nome'];
+        $descricao = $_POST['descricao'];
+        $preco = $_POST['preco'];
+
+        $queryUpdate = "UPDATE recompensas SET nome = ?, descricao = ?, preco = ? WHERE id = ? AND empresa = ?";
+        $stmtUpdate = $conn->prepare($queryUpdate);
+        $stmtUpdate->bind_param("ssdsi", $nome, $descricao, $preco, $id, $empresa);
+        
+        if ($stmtUpdate->execute()) {
+            // Redirecionar para a mesma página após a atualização
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        } else {
+            $mensagemErro = "Erro ao atualizar recompensa.";
+        }
     }
 }
 
@@ -60,6 +87,18 @@ $stmtRecompensas = $conn->prepare($queryRecompensas);
 $stmtRecompensas->bind_param("s", $empresa);
 $stmtRecompensas->execute();
 $resultRecompensas = $stmtRecompensas->get_result();
+
+// Se uma recompensa específica estiver sendo editada
+$recompensaEditar = null;
+if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $idEditar = $_GET['id'];
+    $queryRecompensa = "SELECT * FROM recompensas WHERE id = ? AND empresa = ?";
+    $stmtRecompensa = $conn->prepare($queryRecompensa);
+    $stmtRecompensa->bind_param("is", $idEditar, $empresa);
+    $stmtRecompensa->execute();
+    $resultRecompensa = $stmtRecompensa->get_result();
+    $recompensaEditar = $resultRecompensa->fetch_assoc();
+}
 ?>
 
 <!DOCTYPE html>
@@ -70,7 +109,7 @@ $resultRecompensas = $stmtRecompensas->get_result();
     <title>Painel da Empresa</title>
     <link rel="stylesheet" href="../css/style.css"> <!-- Inclua seu CSS -->
     <style>
-               body {
+        body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             display: flex;
@@ -156,25 +195,27 @@ $resultRecompensas = $stmtRecompensas->get_result();
             <div class="error"><?= htmlspecialchars($mensagemErro); ?></div>
         <?php endif; ?>
 
-        <h4>Cadastrar Recompensa</h4>
+        <h4><?= $recompensaEditar ? 'Editar Recompensa' : 'Cadastrar Recompensa' ?></h4>
         <form method="POST">
             <div class="input-group">
                 <label for="nome">Nome da Recompensa:</label>
-                <input type="text" id="nome" name="nome" required>
+                <input type="text" id="nome" name="nome" required value="<?= $recompensaEditar ? htmlspecialchars($recompensaEditar['nome']) : ''; ?>">
             </div>
             <div class="input-group">
                 <label for="descricao">Descrição:</label>
-                <textarea id="descricao" name="descricao" required></textarea>
+                <textarea id="descricao" name="descricao" required><?= $recompensaEditar ? htmlspecialchars($recompensaEditar['descricao']) : ''; ?></textarea>
             </div>
             <div class="input-group">
                 <label for="preco">Preço (em moedas):</label>
-                <input type="number" id="preco" name="preco" required min="1">
+                <input type="number" id="preco" name="preco" required min="1" value="<?= $recompensaEditar ? htmlspecialchars($recompensaEditar['preco']) : ''; ?>">
             </div>
-            <input type="hidden" name="acao" value="cadastrar">
-            <button type="submit" class="btn">Cadastrar Recompensa</button>
+            <input type="hidden" name="acao" value="<?= $recompensaEditar ? 'editar' : 'cadastrar' ?>">
+            <?php if ($recompensaEditar): ?>
+                <input type="hidden" name="id" value="<?= $recompensaEditar['id']; ?>">
+            <?php endif; ?>
+            <button type="submit" class="btn"><?= $recompensaEditar ? 'Atualizar Recompensa' : 'Cadastrar Recompensa' ?></button>
         </form>
 
-        <!-- Lista de Recompensas -->
         <div class="recompensas-list">
             <h4>Recompensas Cadastradas:</h4>
             <?php if ($resultRecompensas->num_rows > 0): ?>
@@ -184,7 +225,7 @@ $resultRecompensas = $stmtRecompensas->get_result();
                         <p><?= htmlspecialchars($recompensa['descricao']); ?></p>
                         <p><strong>Preço: <?= htmlspecialchars($recompensa['preco']); ?> moedas</strong></p>
                         <div>
-                            <a href="editar_recompensa.php?id=<?= $recompensa['id']; ?>" class="btn" style="background-color: green;">Editar</a>
+                            <a href="?id=<?= $recompensa['id']; ?>" class="btn" style="background-color: green;">Editar</a>
                             <a href="?acao=excluir&id=<?= $recompensa['id']; ?>" class="btn" style="background-color: red;">Excluir</a>
                         </div>
                     </div>
@@ -193,6 +234,11 @@ $resultRecompensas = $stmtRecompensas->get_result();
                 <p>Nenhuma recompensa cadastrada.</p>
             <?php endif; ?>
         </div>
+
+        <!-- Botão de Sair -->
+        <form action="../views/login.php" method="POST">
+            <button type="submit" class="btn logout-btn">Sair</button>
+        </form>
     </div>
 </body>
 </html>

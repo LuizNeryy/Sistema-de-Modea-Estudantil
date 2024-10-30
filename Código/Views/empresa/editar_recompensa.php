@@ -1,5 +1,7 @@
 <?php
 session_start();
+
+// Inclua a conexão ao banco de dados
 include '../../config/conexao.php';
 
 // Verifica se o usuário está autenticado
@@ -8,45 +10,53 @@ if (!isset($_SESSION['usuario_id']) || $_SESSION['tipo_usuario'] != 'empresa') {
     exit();
 }
 
-$empresa = $_SESSION['usuario_nome'];
+// Mensagem de sucesso ou erro
 $mensagemSucesso = '';
 $mensagemErro = '';
 
-// Verifica se o ID da recompensa foi passado
-if (!isset($_GET['id'])) {
-    header("Location: painel_empresa.php");
-    exit();
-}
-
-$id = $_GET['id'];
-
-// Lógica para atualizar a recompensa
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Lógica para editar recompensa
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['acao']) && $_POST['acao'] === 'editar') {
+    $id = $_POST['id'];
     $nome = $_POST['nome'];
     $descricao = $_POST['descricao'];
     $preco = $_POST['preco'];
     
+    // Atualizando a recompensa no banco de dados
     $queryUpdate = "UPDATE recompensas SET nome = ?, descricao = ?, preco = ? WHERE id = ? AND empresa = ?";
     $stmtUpdate = $conn->prepare($queryUpdate);
-    $stmtUpdate->bind_param("ssdsi", $nome, $descricao, $preco, $id, $empresa);
+    $stmtUpdate->bind_param("ssdsi", $nome, $descricao, $preco, $id, $_SESSION['usuario_id']);
     
-    if ($stmtUpdate->execute()) {
-        $mensagemSucesso = "Recompensa atualizada com sucesso!";
-    } else {
-        $mensagemErro = "Erro ao atualizar recompensa.";
+    try {
+        if ($stmtUpdate->execute()) {
+            $mensagemSucesso = "Recompensa editada com sucesso!";
+        } else {
+            $mensagemErro = "Erro ao editar recompensa.";
+        }
+    } catch (mysqli_sql_exception $e) {
+        $mensagemErro = "Erro: " . $e->getMessage();
     }
 }
 
-// Busca os dados da recompensa para preencher o formulário
-$query = "SELECT nome, descricao, preco FROM recompensas WHERE id = ? AND empresa = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("is", $id, $empresa);
-$stmt->execute();
-$result = $stmt->get_result();
-$recompensa = $result->fetch_assoc();
+// Verifica se o ID da recompensa foi passado
+if (isset($_GET['id'])) {
+    $id = $_GET['id'];
+    
+    // Busca a recompensa a ser editada
+    $queryRecompensa = "SELECT * FROM recompensas WHERE id = ? AND empresa = ?";
+    $stmtRecompensa = $conn->prepare($queryRecompensa);
+    $stmtRecompensa->bind_param("is", $id, $_SESSION['usuario_id']);
+    $stmtRecompensa->execute();
+    $resultRecompensa = $stmtRecompensa->get_result();
+    
+    // Verifica se a recompensa foi encontrada
+    if ($resultRecompensa->num_rows === 0) {
+        header("Location: ../../models/empresa.php"); // Redireciona se não encontrar
+        exit();
+    }
 
-if (!$recompensa) {
-    header("Location: painel_empresa.php");
+    $recompensa = $resultRecompensa->fetch_assoc();
+} else {
+    header("Location: empresa.php"); // Redireciona se não houver ID
     exit();
 }
 ?>
@@ -58,14 +68,20 @@ if (!$recompensa) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Recompensa</title>
     <link rel="stylesheet" href="../css/style.css"> <!-- Inclua seu CSS -->
+    <style>
+        /* Adicione seu estilo CSS aqui se necessário */
+    </style>
 </head>
 <body>
     <div class="container">
         <h2>Editar Recompensa</h2>
 
+        <!-- Exibe mensagem de sucesso se existir -->
         <?php if ($mensagemSucesso): ?>
             <div class="success"><?= htmlspecialchars($mensagemSucesso); ?></div>
         <?php endif; ?>
+
+        <!-- Exibe mensagem de erro se existir -->
         <?php if ($mensagemErro): ?>
             <div class="error"><?= htmlspecialchars($mensagemErro); ?></div>
         <?php endif; ?>
@@ -73,7 +89,7 @@ if (!$recompensa) {
         <form method="POST">
             <div class="input-group">
                 <label for="nome">Nome da Recompensa:</label>
-                <input type="text" id="nome" name="nome" required value="<?= htmlspecialchars($recompensa['nome']); ?>">
+                <input type="text" id="nome" name="nome" value="<?= htmlspecialchars($recompensa['nome']); ?>" required>
             </div>
             <div class="input-group">
                 <label for="descricao">Descrição:</label>
@@ -81,14 +97,16 @@ if (!$recompensa) {
             </div>
             <div class="input-group">
                 <label for="preco">Preço (em moedas):</label>
-                <input type="number" id="preco" name="preco" required min="1" value="<?= htmlspecialchars($recompensa['preco']); ?>">
+                <input type="number" id="preco" name="preco" value="<?= htmlspecialchars($recompensa['preco']); ?>" required min="1">
             </div>
+            <input type="hidden" name="acao" value="editar">
+            <input type="hidden" name="id" value="<?= htmlspecialchars($recompensa['id']); ?>">
             <button type="submit" class="btn">Salvar Alterações</button>
         </form>
 
-        <div style="margin-top: 1em;">
-            <a href="painel_empresa.php" class="btn">Voltar</a>
-        </div>
+        <!-- Botão de Voltar -->
+        <a href="empresa.php" class="btn" style="background-color: gray;">Voltar</a>
     </div>
 </body>
 </html>
+             

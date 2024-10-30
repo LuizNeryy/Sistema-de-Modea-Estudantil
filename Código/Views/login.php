@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         // Autentica a empresa
                         $_SESSION['usuario_id'] = $user['id'];
                         $_SESSION['tipo_usuario'] = 'empresa'; // Define o tipo de usuário como empresa
-                        header("Location: empresa/empresa.php"); // Redireciona para a página da empresa
+                        header("Location: ../models/empresa.php"); // Redireciona para a página da empresa
                         exit();
                     } else {
                         $erro = "Senha incorreta.";
