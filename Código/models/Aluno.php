@@ -52,26 +52,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['recompensa_id'])) {
     $stmtVerificaMoedas->execute();
     $resultVerificaMoedas = $stmtVerificaMoedas->get_result();
     $alunoData = $resultVerificaMoedas->fetch_assoc();
-
+    
+    // Verificar o preço da recompensa
+    $queryPrecoRecompensa = "SELECT preco FROM recompensas WHERE id = ?";
+    $stmtPrecoRecompensa = $conn->prepare($queryPrecoRecompensa);
+    $stmtPrecoRecompensa->bind_param("i", $recompensa_id);
+    $stmtPrecoRecompensa->execute();
+    $resultPrecoRecompensa = $stmtPrecoRecompensa->get_result();
+    $recompensa = $resultPrecoRecompensa->fetch_assoc();
+    
     if ($alunoData['moedas'] >= $recompensa['preco']) {
         // Registrar o resgate da recompensa
         $queryResgate = "INSERT INTO recompensas_resgatadas (aluno_id, recompensa_id, data_resgate) VALUES (?, ?, NOW())";
         $stmtResgate = $conn->prepare($queryResgate);
         $stmtResgate->bind_param("ii", $usuario_id, $recompensa_id);
         $stmtResgate->execute();
-
+        
         // Atualizar as moedas do aluno
         $novaQuantidade = $alunoData['moedas'] - $recompensa['preco'];
         $queryAtualizaMoedas = "UPDATE alunos SET moedas = ? WHERE id = ?";
         $stmtAtualizaMoedas = $conn->prepare($queryAtualizaMoedas);
         $stmtAtualizaMoedas->bind_param("ii", $novaQuantidade, $usuario_id);
         $stmtAtualizaMoedas->execute();
-
-        // Redirecionar para evitar o reenvio do formulário
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
+        
+        echo "<script>alert('Recompensa resgatada com sucesso!');</script>";
     } else {
-        echo "<script>alert('Você não tem moedas suficientes para resgatar essa recompensa.');</script>";
+        echo "<script>alert('Você não tem moedas suficientes para resgatar esta recompensa.');</script>";
     }
 }
 ?>
